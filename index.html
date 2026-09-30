@@ -1,29 +1,125 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的英语学习</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+#word {
+    font-size: 40px;
+    margin-top: 30px;
+}
+
+#sentence {
+    font-size: 24px;
+    margin: 25px 0;
+}
+
+#answer {
+    font-size: 22px;
+    margin: 25px 0;
+    min-height: 30px;
+}
+
+button {
+    font-size: 18px;
+    padding: 12px 20px;
+    margin: 8px;
+    border-radius: 10px;
+    border: 1px solid #999;
+    background: white;
+}
+</style>
+
 </head>
 
 <body>
 
 <h1>我的英语学习</h1>
 
-<h2 id="word">get</h2>
+<p id="progress"></p>
 
-<p id="sentence">I get a book.</p>
+<div id="word"></div>
+
+<div id="sentence"></div>
+
+<div id="answer"></div>
 
 <button onclick="showAnswer()">查看答案</button>
 
-<p id="answer"></p>
+<button onclick="nextWord()">下一题</button>
 
 <script>
 
-function showAnswer() {
-    document.getElementById("answer").innerText =
-    "我得到一本书。";
+const words = [
+    {
+        word: "get",
+        sentence: "I get a book.",
+        answer: "我得到一本书。"
+    },
+
+    {
+        word: "give",
+        sentence: "I give you a book.",
+        answer: "我给你一本书。"
+    },
+
+    {
+        word: "take",
+        sentence: "I take my phone.",
+        answer: "我拿上我的手机。"
+    },
+
+    {
+        word: "bring",
+        sentence: "Bring your phone.",
+        answer: "带上你的手机。"
+    },
+
+    {
+        word: "put",
+        sentence: "Put the book there.",
+        answer: "把书放在那里。"
+    }
+];
+
+let current = 0;
+
+function showWord() {
+
+    document.getElementById("progress").innerText =
+        "第 " + (current + 1) + " / " + words.length + " 题";
+
+    document.getElementById("word").innerText =
+        words[current].word;
+
+    document.getElementById("sentence").innerText =
+        words[current].sentence;
+
+    document.getElementById("answer").innerText = "";
 }
+
+function showAnswer() {
+
+    document.getElementById("answer").innerText =
+        words[current].answer;
+}
+
+function nextWord() {
+
+    current++;
+
+    if (current >= words.length) {
+        current = 0;
+    }
+
+    showWord();
+}
+
+showWord();
 
 </script>
 
