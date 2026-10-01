@@ -59,6 +59,10 @@ button {
     background: #e3f2fd;
 }
 
+.review {
+    background: #fff3cd;
+}
+
 .summary {
     margin-top: 35px;
     padding-top: 20px;
@@ -96,6 +100,10 @@ button {
 
 <button class="next" onclick="nextWord()">
 下一题
+</button>
+
+<button class="review" onclick="reviewWeakWord()">
+重点复习
 </button>
 
 <div id="status"></div>
@@ -285,6 +293,42 @@ function nextWord() {
 
 }
 
+
+function reviewWeakWord() {
+
+    let weakWords = [];
+
+    for (let i = 0; i < words.length; i++) {
+
+        const word = words[i].word;
+        const record = records[word];
+
+        if (record && record.forgotten > 0) {
+
+            weakWords.push({
+                index: i,
+                forgotten: record.forgotten
+            });
+
+        }
+    }
+
+    if (weakWords.length === 0) {
+
+        alert("目前还没有需要重点复习的词。");
+
+        return;
+    }
+
+    weakWords.sort(function(a, b) {
+        return b.forgotten - a.forgotten;
+    });
+
+    current = weakWords[0].index;
+
+    showWord();
+
+}
 
 showWord();
 
