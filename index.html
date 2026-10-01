@@ -1,18 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
 <title>我的英语学习</title>
 
 <style>
+
 body {
     font-family: Arial, sans-serif;
     text-align: center;
     padding: 30px 15px;
     max-width: 600px;
     margin: auto;
+}
+
+h1 {
+    margin-bottom: 25px;
+}
+
+#mode {
+    font-size: 20px;
+    margin: 15px;
+}
+
+#progress {
+    color: #666;
 }
 
 #word {
@@ -22,7 +39,7 @@ body {
 }
 
 #sentence {
-    font-size: 24px;
+    font-size: 25px;
     margin: 25px 0;
 }
 
@@ -47,6 +64,10 @@ button {
     background: white;
 }
 
+.modeButton {
+    background: #e3f2fd;
+}
+
 .remember {
     background: #e8f5e9;
 }
@@ -68,6 +89,11 @@ button {
     padding-top: 20px;
     border-top: 1px solid #ddd;
 }
+
+.hidden {
+    display: none;
+}
+
 </style>
 
 </head>
@@ -75,6 +101,20 @@ button {
 <body>
 
 <h1>我的英语学习</h1>
+
+<div id="mode">
+    单词学习
+</div>
+
+<button class="modeButton"
+onclick="wordMode()">
+单词学习
+</button>
+
+<button class="modeButton"
+onclick="sentenceMode()">
+句子理解
+</button>
 
 <p id="progress"></p>
 
@@ -84,26 +124,27 @@ button {
 
 <div id="answer"></div>
 
-<button onclick="showAnswer()">查看答案</button>
-
-<br>
-
-<button class="remember" onclick="rememberWord()">
-我记得
-</button>
-
-<button class="forget" onclick="forgetWord()">
-不记得
+<button onclick="showAnswer()">
+查看答案
 </button>
 
 <br>
 
-<button class="next" onclick="nextWord()">
+<button class="remember"
+onclick="rememberWord()">
+我看懂了
+</button>
+
+<button class="forget"
+onclick="forgetWord()">
+没看懂
+</button>
+
+<br>
+
+<button class="next"
+onclick="nextQuestion()">
 下一题
-</button>
-
-<button class="review" onclick="reviewWeakWord()">
-重点复习
 </button>
 
 <div id="status"></div>
@@ -152,6 +193,64 @@ const words = [
 
 ];
 
+
+const sentenceTests = [
+
+    {
+        sentence: "I get a book.",
+        answer: "我得到一本书。"
+    },
+
+    {
+        sentence: "I give you a book.",
+        answer: "我给你一本书。"
+    },
+
+    {
+        sentence: "I take my phone.",
+        answer: "我拿上我的手机。"
+    },
+
+    {
+        sentence: "Bring your phone.",
+        answer: "带上你的手机。"
+    },
+
+    {
+        sentence: "Put the book there.",
+        answer: "把书放在那里。"
+    },
+
+    {
+        sentence: "I give you my phone.",
+        answer: "我把我的手机给你。"
+    },
+
+    {
+        sentence: "I take the book.",
+        answer: "我拿这本书。"
+    },
+
+    {
+        sentence: "Put your phone there.",
+        answer: "把你的手机放在那里。"
+    },
+
+    {
+        sentence: "Bring the book.",
+        answer: "把书带来。"
+    },
+
+    {
+        sentence: "I get the book.",
+        answer: "我拿到这本书。"
+    }
+
+];
+
+
+let mode = "word";
+
 let current = 0;
 
 let records = JSON.parse(
@@ -159,72 +258,192 @@ let records = JSON.parse(
 ) || {};
 
 
-function showWord() {
+function wordMode() {
+
+    mode = "word";
+
+    current = 0;
+
+    document.getElementById("mode").innerText =
+        "单词学习";
+
+    showQuestion();
+
+}
+
+
+function sentenceMode() {
+
+    mode = "sentence";
+
+    current = 0;
+
+    document.getElementById("mode").innerText =
+        "句子理解";
+
+    showQuestion();
+
+}
+
+
+function getCurrentQuestion() {
+
+    if (mode === "word") {
+        return words[current];
+    }
+
+    return sentenceTests[current];
+
+}
+
+
+function showQuestion() {
+
+    const question = getCurrentQuestion();
+
+    const total =
+        mode === "word"
+        ? words.length
+        : sentenceTests.length;
 
     document.getElementById("progress").innerText =
-        "第 " + (current + 1) + " / " + words.length + " 题";
+        "第 " + (current + 1) +
+        " / " + total;
 
-    document.getElementById("word").innerText =
-        words[current].word;
+    if (mode === "word") {
+
+        document.getElementById("word").innerText =
+            question.word;
+
+    } else {
+
+        document.getElementById("word").innerText =
+            "句子";
+
+    }
 
     document.getElementById("sentence").innerText =
-        words[current].sentence;
+        question.sentence;
 
     document.getElementById("answer").innerText = "";
 
-    showStatus();
+    document.getElementById("status").innerText =
+        "";
 
-    updateSummary();
 }
 
 
 function showAnswer() {
 
+    const question = getCurrentQuestion();
+
     document.getElementById("answer").innerText =
-        words[current].answer;
+        question.answer;
 
 }
 
 
 function rememberWord() {
 
-    const word = words[current].word;
+    const key =
+        mode === "word"
+        ? words[current].word
+        : "句子：" + sentenceTests[current].sentence;
 
-    if (!records[word]) {
-        records[word] = {
+    if (!records[key]) {
+
+        records[key] = {
             remembered: 0,
             forgotten: 0
         };
+
     }
 
-    records[word].remembered++;
+    records[key].remembered++;
 
     saveRecords();
 
     showStatus();
 
     updateSummary();
+
 }
 
 
 function forgetWord() {
 
-    const word = words[current].word;
+    const key =
+        mode === "word"
+        ? words[current].word
+        : "句子：" + sentenceTests[current].sentence;
 
-    if (!records[word]) {
-        records[word] = {
+    if (!records[key]) {
+
+        records[key] = {
             remembered: 0,
             forgotten: 0
         };
+
     }
 
-    records[word].forgotten++;
+    records[key].forgotten++;
 
     saveRecords();
 
     showStatus();
 
     updateSummary();
+
+}
+
+
+function showStatus() {
+
+    const key =
+        mode === "word"
+        ? words[current].word
+        : "句子：" + sentenceTests[current].sentence;
+
+    const record = records[key];
+
+    if (!record) {
+
+        document.getElementById("status").innerText =
+            "还没有学习记录。";
+
+        return;
+
+    }
+
+    document.getElementById("status").innerText =
+        "看懂：" + record.remembered +
+        " 次　|　没看懂：" +
+        record.forgotten + " 次";
+
+}
+
+
+function updateSummary() {
+
+    let rememberedTotal = 0;
+
+    let forgottenTotal = 0;
+
+    for (const key in records) {
+
+        rememberedTotal +=
+            records[key].remembered;
+
+        forgottenTotal +=
+            records[key].forgotten;
+
+    }
+
+    document.getElementById("summary").innerText =
+        "看懂：" + rememberedTotal +
+        " 次　　没看懂：" +
+        forgottenTotal + " 次";
+
 }
 
 
@@ -238,99 +457,25 @@ function saveRecords() {
 }
 
 
-function showStatus() {
+function nextQuestion() {
 
-    const word = words[current].word;
-
-    const record = records[word];
-
-    if (!record) {
-
-        document.getElementById("status").innerText =
-            "这个词还没有学习记录。";
-
-        return;
-    }
-
-    document.getElementById("status").innerText =
-        "我记得：" + record.remembered +
-        " 次　|　不记得：" + record.forgotten + " 次";
-
-}
-
-
-function updateSummary() {
-
-    let rememberedTotal = 0;
-    let forgottenTotal = 0;
-
-    for (const word in records) {
-
-        rememberedTotal +=
-            records[word].remembered;
-
-        forgottenTotal +=
-            records[word].forgotten;
-
-    }
-
-    document.getElementById("summary").innerText =
-        "记得：" + rememberedTotal +
-        " 次　　不记得：" + forgottenTotal + " 次";
-
-}
-
-
-function nextWord() {
+    const total =
+        mode === "word"
+        ? words.length
+        : sentenceTests.length;
 
     current++;
 
-    if (current >= words.length) {
+    if (current >= total) {
         current = 0;
     }
 
-    showWord();
+    showQuestion();
 
 }
 
 
-function reviewWeakWord() {
-
-    let weakWords = [];
-
-    for (let i = 0; i < words.length; i++) {
-
-        const word = words[i].word;
-        const record = records[word];
-
-        if (record && record.forgotten > 0) {
-
-            weakWords.push({
-                index: i,
-                forgotten: record.forgotten
-            });
-
-        }
-    }
-
-    if (weakWords.length === 0) {
-
-        alert("目前还没有需要重点复习的词。");
-
-        return;
-    }
-
-    weakWords.sort(function(a, b) {
-        return b.forgotten - a.forgotten;
-    });
-
-    current = weakWords[0].index;
-
-    showWord();
-
-}
-
-showWord();
+showQuestion();
 
 </script>
 
