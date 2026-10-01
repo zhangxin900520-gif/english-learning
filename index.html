@@ -90,10 +90,6 @@ button {
     border-top: 1px solid #ddd;
 }
 
-.hidden {
-    display: none;
-}
-
 </style>
 
 </head>
@@ -116,6 +112,11 @@ onclick="sentenceMode()">
 句子理解
 </button>
 
+<button class="review"
+onclick="reviewMode()">
+重点复习
+</button>
+
 <p id="progress"></p>
 
 <div id="word"></div>
@@ -131,12 +132,12 @@ onclick="sentenceMode()">
 <br>
 
 <button class="remember"
-onclick="rememberWord()">
+onclick="rememberItem()">
 我看懂了
 </button>
 
 <button class="forget"
-onclick="forgetWord()">
+onclick="forgetItem()">
 没看懂
 </button>
 
@@ -253,6 +254,10 @@ let mode = "word";
 
 let current = 0;
 
+let reviewList = [];
+
+let reviewPosition = 0;
+
 let records = JSON.parse(
     localStorage.getItem("englishRecords")
 ) || {};
@@ -286,13 +291,106 @@ function sentenceMode() {
 }
 
 
-function getCurrentQuestion() {
+function reviewMode() {
 
-    if (mode === "word") {
-        return words[current];
+    reviewList = [];
+
+    for (let i = 0; i < words.length; i++) {
+
+        const key = words[i].word;
+
+        const record = records[key];
+
+        if (record && record.forgotten > 0) {
+
+            reviewList.push({
+                type: "word",
+                index: i,
+                forgotten: record.forgotten
+            });
+
+        }
     }
 
-    return sentenceTests[current];
+    for (let i = 0; i < sentenceTests.length; i++) {
+
+        const key =
+            "句子：" + sentenceTests[i].sentence;
+
+        const record = records[key];
+
+        if (record && record.forgotten > 0) {
+
+            reviewList.push({
+                type: "sentence",
+                index: i,
+                forgotten: record.forgotten
+            });
+
+        }
+    }
+
+    if (reviewList.length === 0) {
+
+        alert("目前还没有需要重点复习的内容。");
+
+        return;
+    }
+
+    reviewList.sort(function(a, b) {
+
+        return b.forgotten - a.forgotten;
+
+    });
+
+    reviewPosition = 0;
+
+    mode = "review";
+
+    document.getElementById("mode").innerText =
+        "重点复习";
+
+    showReviewQuestion();
+
+}
+
+
+function showReviewQuestion() {
+
+    const item =
+        reviewList[reviewPosition];
+
+    let question;
+
+    if (item.type === "word") {
+
+        question = words[item.index];
+
+        document.getElementById("word").innerText =
+            question.word;
+
+    } else {
+
+        question = sentenceTests[item.index];
+
+        document.getElementById("word").innerText =
+            "句子";
+
+    }
+
+    document.getElementById("sentence").innerText =
+        question.sentence;
+
+    document.getElementById("answer").innerText =
+        "";
+
+    document.getElementById("progress").innerText =
+        "重点复习 " +
+        (reviewPosition + 1) +
+        " / " +
+        reviewList.length;
+
+    showStatus();
 
 }
 
@@ -307,8 +405,10 @@ function showQuestion() {
         : sentenceTests.length;
 
     document.getElementById("progress").innerText =
-        "第 " + (current + 1) +
-        " / " + total;
+        "第 " +
+        (current + 1) +
+        " / " +
+        total;
 
     if (mode === "word") {
 
@@ -325,17 +425,46 @@ function showQuestion() {
     document.getElementById("sentence").innerText =
         question.sentence;
 
-    document.getElementById("answer").innerText = "";
-
-    document.getElementById("status").innerText =
+    document.getElementById("answer").innerText =
         "";
+
+    showStatus();
+
+}
+
+
+function getCurrentQuestion() {
+
+    if (mode === "word") {
+
+        return words[current];
+
+    }
+
+    return sentenceTests[current];
 
 }
 
 
 function showAnswer() {
 
-    const question = getCurrentQuestion();
+    let question;
+
+    if (mode === "review") {
+
+        const item =
+            reviewList[reviewPosition];
+
+        question =
+            item.type === "word"
+            ? words[item.index]
+            : sentenceTests[item.index];
+
+    } else {
+
+        question = getCurrentQuestion();
+
+    }
 
     document.getElementById("answer").innerText =
         question.answer;
@@ -343,12 +472,39 @@ function showAnswer() {
 }
 
 
-function rememberWord() {
+function getCurrentKey() {
 
-    const key =
-        mode === "word"
-        ? words[current].word
-        : "句子：" + sentenceTests[current].sentence;
+    if (mode === "word") {
+
+        return words[current].word;
+
+    }
+
+    if (mode === "sentence") {
+
+        return "句子：" +
+            sentenceTests[current].sentence;
+
+    }
+
+    const item =
+        reviewList[reviewPosition];
+
+    if (item.type === "word") {
+
+        return words[item.index].word;
+
+    }
+
+    return "句子：" +
+        sentenceTests[item.index].sentence;
+
+}
+
+
+function rememberItem() {
+
+    const key = getCurrentKey();
 
     if (!records[key]) {
 
@@ -370,12 +526,9 @@ function rememberWord() {
 }
 
 
-function forgetWord() {
+function forgetItem() {
 
-    const key =
-        mode === "word"
-        ? words[current].word
-        : "句子：" + sentenceTests[current].sentence;
+    const key = getCurrentKey();
 
     if (!records[key]) {
 
@@ -399,10 +552,7 @@ function forgetWord() {
 
 function showStatus() {
 
-    const key =
-        mode === "word"
-        ? words[current].word
-        : "句子：" + sentenceTests[current].sentence;
+    const key = getCurrentKey();
 
     const record = records[key];
 
@@ -416,9 +566,11 @@ function showStatus() {
     }
 
     document.getElementById("status").innerText =
-        "看懂：" + record.remembered +
+        "看懂：" +
+        record.remembered +
         " 次　|　没看懂：" +
-        record.forgotten + " 次";
+        record.forgotten +
+        " 次";
 
 }
 
@@ -440,9 +592,11 @@ function updateSummary() {
     }
 
     document.getElementById("summary").innerText =
-        "看懂：" + rememberedTotal +
+        "看懂：" +
+        rememberedTotal +
         " 次　　没看懂：" +
-        forgottenTotal + " 次";
+        forgottenTotal +
+        " 次";
 
 }
 
@@ -459,6 +613,23 @@ function saveRecords() {
 
 function nextQuestion() {
 
+    if (mode === "review") {
+
+        reviewPosition++;
+
+        if (reviewPosition >= reviewList.length) {
+
+            alert("这一轮重点复习结束了。");
+
+            reviewPosition = 0;
+
+        }
+
+        showReviewQuestion();
+
+        return;
+    }
+
     const total =
         mode === "word"
         ? words.length
@@ -467,7 +638,9 @@ function nextQuestion() {
     current++;
 
     if (current >= total) {
+
         current = 0;
+
     }
 
     showQuestion();
