@@ -3,17 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>我的英语学习</title>
 
 <style>
 body {
     font-family: Arial, sans-serif;
     text-align: center;
-    padding: 40px 20px;
+    padding: 30px 15px;
+    max-width: 600px;
+    margin: auto;
 }
 
 #word {
-    font-size: 40px;
+    font-size: 42px;
+    font-weight: bold;
     margin-top: 30px;
 }
 
@@ -28,13 +32,37 @@ body {
     min-height: 30px;
 }
 
+#status {
+    font-size: 18px;
+    margin: 20px 0;
+    color: #555;
+}
+
 button {
     font-size: 18px;
-    padding: 12px 20px;
-    margin: 8px;
+    padding: 12px 18px;
+    margin: 7px;
     border-radius: 10px;
     border: 1px solid #999;
     background: white;
+}
+
+.remember {
+    background: #e8f5e9;
+}
+
+.forget {
+    background: #ffebee;
+}
+
+.next {
+    background: #e3f2fd;
+}
+
+.summary {
+    margin-top: 35px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
 }
 </style>
 
@@ -54,11 +82,36 @@ button {
 
 <button onclick="showAnswer()">查看答案</button>
 
-<button onclick="nextWord()">下一题</button>
+<br>
+
+<button class="remember" onclick="rememberWord()">
+我记得
+</button>
+
+<button class="forget" onclick="forgetWord()">
+不记得
+</button>
+
+<br>
+
+<button class="next" onclick="nextWord()">
+下一题
+</button>
+
+<div id="status"></div>
+
+<div class="summary">
+
+<h2>学习记录</h2>
+
+<p id="summary"></p>
+
+</div>
 
 <script>
 
 const words = [
+
     {
         word: "get",
         sentence: "I get a book.",
@@ -88,9 +141,15 @@ const words = [
         sentence: "Put the book there.",
         answer: "把书放在那里。"
     }
+
 ];
 
 let current = 0;
+
+let records = JSON.parse(
+    localStorage.getItem("englishRecords")
+) || {};
+
 
 function showWord() {
 
@@ -104,13 +163,115 @@ function showWord() {
         words[current].sentence;
 
     document.getElementById("answer").innerText = "";
+
+    showStatus();
+
+    updateSummary();
 }
+
 
 function showAnswer() {
 
     document.getElementById("answer").innerText =
         words[current].answer;
+
 }
+
+
+function rememberWord() {
+
+    const word = words[current].word;
+
+    if (!records[word]) {
+        records[word] = {
+            remembered: 0,
+            forgotten: 0
+        };
+    }
+
+    records[word].remembered++;
+
+    saveRecords();
+
+    showStatus();
+
+    updateSummary();
+}
+
+
+function forgetWord() {
+
+    const word = words[current].word;
+
+    if (!records[word]) {
+        records[word] = {
+            remembered: 0,
+            forgotten: 0
+        };
+    }
+
+    records[word].forgotten++;
+
+    saveRecords();
+
+    showStatus();
+
+    updateSummary();
+}
+
+
+function saveRecords() {
+
+    localStorage.setItem(
+        "englishRecords",
+        JSON.stringify(records)
+    );
+
+}
+
+
+function showStatus() {
+
+    const word = words[current].word;
+
+    const record = records[word];
+
+    if (!record) {
+
+        document.getElementById("status").innerText =
+            "这个词还没有学习记录。";
+
+        return;
+    }
+
+    document.getElementById("status").innerText =
+        "我记得：" + record.remembered +
+        " 次　|　不记得：" + record.forgotten + " 次";
+
+}
+
+
+function updateSummary() {
+
+    let rememberedTotal = 0;
+    let forgottenTotal = 0;
+
+    for (const word in records) {
+
+        rememberedTotal +=
+            records[word].remembered;
+
+        forgottenTotal +=
+            records[word].forgotten;
+
+    }
+
+    document.getElementById("summary").innerText =
+        "记得：" + rememberedTotal +
+        " 次　　不记得：" + forgottenTotal + " 次";
+
+}
+
 
 function nextWord() {
 
@@ -121,7 +282,9 @@ function nextWord() {
     }
 
     showWord();
+
 }
+
 
 showWord();
 
